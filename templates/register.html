@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - FamilyArchive</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="auth-wrapper">
+        <div class="auth-image-side" style="background-image: url('{{ url_for('static', filename='avatar.jpg') }}');">
+        </div>
+        <div class="auth-form-side">
+            <div class="auth-header">
+                <a href="/" class="header-logo" style="margin-bottom: var(--space-12); display: inline-flex;">
+                    <i data-lucide="layers" style="margin-right: var(--space-2); width: 24px; height: 24px;"></i>
+                    FamilyArchive
+                </a>
+                <h1 class="auth-title">Create your archive.</h1>
+                <p class="auth-subtitle">Begin preserving your family history today.</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages" style="margin-bottom: var(--space-6);">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form action="/register" method="POST">
+                <div class="form-group">
+                    <label for="person_id" class="form-label">Unique ID (English letters)</label>
+                    <input type="text" id="person_id" name="person_id" class="form-control" placeholder="e.g. john_doe" required>
+                </div>
+
+                <div style="display: flex; gap: var(--space-4);">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="first_name" class="form-label">First Name *</label>
+                        <input type="text" id="first_name" name="first_name" class="form-control" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="last_name" class="form-label">Last Name *</label>
+                        <input type="text" id="last_name" name="last_name" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: var(--space-4);">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="patronymic" class="form-label">Middle Name</label>
+                        <input type="text" id="patronymic" name="patronymic" class="form-control">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="maiden_name" class="form-label">Maiden Name</label>
+                        <input type="text" id="maiden_name" name="maiden_name" class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Gender *</label>
+                    <div style="display: flex; gap: var(--space-4); margin-top: var(--space-2);">
+                        <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer; color: var(--text-primary);">
+                            <input type="radio" name="gender" value="male" checked> Male
+                        </label>
+                        <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer; color: var(--text-primary);">
+                            <input type="radio" name="gender" value="female"> Female
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="example@mail.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="Create a password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password" class="form-label">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Repeat your password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: var(--space-4); margin-top: var(--space-4);">Create Tree</button>
+            </form>
+
+            <div style="margin-top: var(--space-8); text-align: center; color: var(--text-secondary); font-size: var(--text-sm);">
+                Already have an account? <a href="/login" style="color: var(--text-primary); font-weight: 500; text-decoration: underline;">Sign In</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

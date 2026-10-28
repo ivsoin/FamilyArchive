@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}История Жизни: {{ person.name }}{% endblock %}
+
+{% block content %}
+<style>
+    /* Special immersive styling for the story mode */
+    body {
+        background-color: var(--bg-primary); /* A very dark or clean background */
+    }
+    
+    .story-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding-top: var(--space-12);
+        padding-bottom: var(--space-24);
+    }
+    
+    .story-hero {
+        text-align: center;
+        margin-bottom: var(--space-24);
+        padding-bottom: var(--space-12);
+        border-bottom: 1px solid var(--border-light);
+    }
+    
+    .story-hero img {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-bottom: var(--space-6);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .story-title {
+        font-size: 3rem;
+        font-weight: 300;
+        letter-spacing: -0.03em;
+        margin-bottom: var(--space-4);
+    }
+    
+    .story-subtitle {
+        font-size: var(--text-lg);
+        color: var(--text-secondary);
+        font-weight: 300;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+    
+    .story-block {
+        margin-bottom: var(--space-24);
+        position: relative;
+    }
+    
+    .story-block-year {
+        font-size: var(--text-4xl);
+        font-weight: 300;
+        color: var(--border-medium);
+        position: absolute;
+        left: -100px;
+        top: 0;
+        opacity: 0.3;
+        transition: color 0.3s, opacity 0.3s;
+    }
+    
+    .story-block:hover .story-block-year {
+        color: var(--accent-color);
+        opacity: 0.8;
+    }
+    
+    .story-block-content {
+        background: var(--bg-secondary);
+        padding: var(--space-8);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-light);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .story-block-content:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .story-block-title {
+        font-size: var(--text-2xl);
+        font-weight: 500;
+        margin-bottom: var(--space-4);
+    }
+    
+    .story-block-text {
+        font-size: var(--text-lg);
+        line-height: 1.8;
+        color: var(--text-secondary);
+        white-space: pre-wrap;
+    }
+    
+    .story-gallery {
+        display: flex;
+        gap: var(--space-4);
+        margin-top: var(--space-6);
+        overflow-x: auto;
+        padding-bottom: var(--space-4);
+    }
+    
+    .story-gallery img {
+        height: 200px;
+        border-radius: var(--radius-md);
+        object-fit: cover;
+    }
+    
+    @media (max-width: 1024px) {
+        .story-block-year {
+            position: static;
+            font-size: var(--text-2xl);
+            margin-bottom: var(--space-2);
+            opacity: 0.5;
+        }
+    }
+</style>
+
+<div class="story-container">
+    <div style="margin-bottom: var(--space-8);">
+        <a href="/profile/{{ person.id }}" class="btn btn-secondary" style="display: inline-flex; align-items: center;">
+            <i data-lucide="arrow-left" style="margin-right: var(--space-2); width: 18px; height: 18px;"></i>
+            Вернуться в профиль
+        </a>
+    </div>
+    
+    <div class="story-hero">
+        {% if person.photo %}
+        <img src="{{ url_for('static', filename=person.photo) }}" alt="{{ person.name }}">
+        {% endif %}
+        <h1 class="story-title">История Жизни</h1>
+        <div class="story-subtitle">{{ person.name }}</div>
+        {% if person.bio %}
+        <div style="margin-top: var(--space-6); font-size: var(--text-xl); color: var(--text-primary); font-style: italic; font-weight: 300;">
+            "{{ person.bio }}"
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="story-content">
+        {% if events %}
+            {% for event in events %}
+            <div class="story-block">
+                {% if event.event_year %}
+                <div class="story-block-year">{{ event.event_year }}</div>
+                {% endif %}
+                
+                <div class="story-block-content">
+                    <h2 class="story-block-title">{{ event.title }}</h2>
+                    <div class="story-block-text">{{ event.description }}</div>
+                    
+                    {% if event.photo_links %}
+                    <div class="story-gallery">
+                        {% for link in event.photo_links.split(',') %}
+                            {% set clean_link = link.strip() %}
+                            {% if clean_link %}
+                            <img src="{{ url_for('static', filename=clean_link) if not clean_link.startswith('http') else clean_link }}" alt="">
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align: center; padding: var(--space-12); color: var(--text-muted); font-size: var(--text-lg);">
+                История пока не написана. Начните добавлять события из жизни.
+            </div>
+        {% endif %}
+    </div>
+    
+    <div style="text-align: center; margin-top: var(--space-16);">
+        <p style="font-size: var(--text-sm); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: var(--space-4);">Конец истории (на данный момент)</p>
+        <div style="width: 4px; height: 40px; background: var(--border-light); margin: 0 auto;"></div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,457 @@
+{% extends "base.html" %}
+
+{% block title %}{{ data.name if data else 'Profile' }} - FamilyArchive{% endblock %}
+
+{% block content %}
+<style>
+/* Profile Page Styles */
+.profile-container {
+    max-width: 1200px; /* Matches screenshot width */
+    margin: 0 auto;
+    padding: var(--space-4) var(--space-8);
+}
+
+/* Profile Hero */
+.profile-hero {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--space-12);
+    padding-top: var(--space-6);
+}
+
+.profile-hero-photo {
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    margin-right: var(--space-12);
+}
+
+.profile-hero-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.profile-hero-name {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 3.5rem;
+    color: #1a1a1a;
+    margin-bottom: var(--space-2);
+    font-weight: normal;
+    letter-spacing: -0.01em;
+}
+
+.profile-hero-years {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.profile-hero-role {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+}
+
+.profile-hero-quote {
+    flex: 1;
+    text-align: right;
+    font-style: italic;
+    font-size: 1.4rem;
+    color: var(--text-muted);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    max-width: 380px;
+    margin-left: auto;
+    line-height: 1.5;
+}
+
+/* Tabs */
+.profile-tabs-wrapper {
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    margin-bottom: var(--space-12);
+}
+.profile-tabs {
+    display: flex;
+    gap: var(--space-8);
+}
+.profile-tab {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    padding-bottom: var(--space-4);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+}
+.profile-tab:hover {
+    color: var(--text-primary);
+}
+.profile-tab.active {
+    color: #1a1a1a;
+    border-bottom-color: #1a1a1a;
+    font-weight: 500;
+}
+
+/* Section Visibility */
+.profile-content-section { display: none; animation: fadeIn 0.3s ease; }
+.profile-content-section.active { display: block; }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Timeline Tab Styles */
+.timeline-header { margin-bottom: var(--space-12); }
+.timeline-title { font-family: 'Georgia', 'Times New Roman', serif; font-size: 3.5rem; color: #1a1a1a; font-weight: normal; margin-bottom: var(--space-2); letter-spacing: -0.01em; }
+.timeline-years { font-size: 1.15rem; color: var(--text-muted); }
+.timeline-container { position: relative; max-width: 900px; padding-bottom: var(--space-12); margin-left: 11px; }
+.timeline-container::before { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 2px; background: rgba(0,0,0,0.1); }
+.timeline-item-wrapper { position: relative; padding-left: 48px; margin-bottom: var(--space-12); display: flex; align-items: center; }
+.timeline-dot { position: absolute; left: -5px; top: 50%; width: 12px; height: 12px; background: #1a1a1a; border-radius: 50%; transform: translateY(-50%); z-index: 2; }
+.timeline-card { flex: 1; display: flex; justify-content: space-between; align-items: stretch; background: white; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 15px rgba(0,0,0,0.03); cursor: pointer; transition: transform var(--transition-fast), box-shadow var(--transition-fast); text-decoration: none; color: inherit; min-height: 200px; }
+.timeline-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.06); }
+.timeline-content { flex: 1; padding: 32px; display: flex; flex-direction: column; justify-content: center; }
+.timeline-item-title { font-size: 1.4rem; font-weight: 500; color: #1a1a1a; margin-bottom: 4px; }
+.timeline-item-years { font-size: 1rem; color: var(--text-muted); margin-bottom: var(--space-3); }
+.timeline-item-desc { font-size: 1.05rem; color: var(--text-main); line-height: 1.6; margin-bottom: var(--space-4); }
+.timeline-item-stats { font-size: 0.9rem; color: var(--text-muted); }
+.timeline-media { width: 300px; position: relative; flex-shrink: 0; border-radius: 0 16px 16px 0; overflow: hidden; }
+.timeline-media img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+.timeline-arrow { margin-left: 24px; color: var(--text-muted); flex-shrink: 0; }
+
+/* Overview Layout (2 columns) */
+.overview-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 120px; /* Big gap between sidebar and main content */
+}
+
+/* Left Sidebar (About) */
+.about-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.section-title {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 2rem;
+    color: #1a1a1a;
+    margin-bottom: var(--space-8);
+    font-weight: normal;
+}
+
+.about-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    margin-bottom: var(--space-12);
+}
+
+.about-item {
+    display: flex;
+    gap: var(--space-4);
+    align-items: flex-start;
+}
+
+.about-item-icon {
+    color: var(--text-muted);
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    stroke-width: 1.5;
+}
+
+.about-item-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.about-item-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.about-item-value {
+    font-size: 1.05rem;
+    color: #1a1a1a;
+}
+
+.btn-edit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #1a1a1a;
+    color: #fff;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+    align-self: flex-start;
+    text-decoration: none;
+}
+.btn-edit:hover {
+    background-color: #333;
+}
+
+/* Right Content (His Story) */
+.story-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.story-text {
+    font-size: 1.15rem;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    margin-bottom: var(--space-12);
+}
+
+.story-photos {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+}
+
+.story-photo {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 16px;
+    border: 1px solid rgba(0,0,0,0.04);
+}
+
+@media (max-width: 900px) {
+    .profile-hero {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-6);
+    }
+    .profile-hero-photo {
+        margin-right: 0;
+    }
+    .profile-hero-quote {
+        text-align: center;
+        margin-left: 0;
+        margin-top: var(--space-6);
+    }
+    .overview-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-12);
+    }
+    .story-photos {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 600px) {
+    .story-photos {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<div class="profile-container">
+    <!-- Hero Block -->
+    <div class="profile-hero">
+        <!-- Крупная круглая фотография -->
+        {% if data and data.photo %}
+            <img src="{{ url_for('static', filename=data.photo) }}" class="profile-hero-photo" alt="{{ data.name }}">
+        {% else %}
+            <img src="https://ui-avatars.com/api/?name={{ data.name | urlencode }}&background=F3F4F6&color=374151&size=512&font-size=0.33" class="profile-hero-photo" alt="{{ data.name if data else 'Profile' }}">
+        {% endif %}
+        
+        <div class="profile-hero-info">
+            <h1 class="profile-hero-name">{{ data.name if data else 'Denis Soin' }}</h1>
+            
+            {% if data and data.birth_date %}
+                {% if data.is_alive == 1 or not data.death_date %}
+                    <div class="profile-hero-years">{{ format_date(data.birth_date) }} <span style="opacity: 0.7; margin-left: 4px;">{{ calculate_age(data.birth_date, None, 1) }}</span></div>
+                {% else %}
+                    <div class="profile-hero-years">{{ format_date(data.birth_date) }} &ndash; {{ format_date(data.death_date) }} <span style="opacity: 0.7; margin-left: 4px;">{{ calculate_age(data.birth_date, data.death_date, 0) }}</span></div>
+                {% endif %}
+            {% else %}
+                <div class="profile-hero-years">{{ _('Unknown') }}</div>
+            {% endif %}
+            
+            <div class="profile-hero-role">{{ data.calc_role if data and data.calc_role else 'Родственник' }}</div>
+        </div>
+        
+        <div class="profile-hero-quote">
+            "A life well lived leaves beautiful traces."
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="profile-tabs-wrapper">
+        <div class="profile-tabs">
+            <a href="#overview" class="profile-tab active" onclick="switchTab('overview', this); return false;">{{ _('Overview') }}</a>
+            <a href="#story" class="profile-tab" onclick="switchTab('story', this); return false;">{{ _('Story') }}</a>
+            <a href="#timeline" class="profile-tab" onclick="switchTab('timeline', this); return false;">{{ _('Timeline') }}</a>
+            <a href="#memories" class="profile-tab" onclick="switchTab('memories', this); return false;">{{ _('Memories') }}</a>
+            <a href="#photos" class="profile-tab" onclick="switchTab('photos', this); return false;">{{ _('Photos') }}</a>
+            <a href="#family" class="profile-tab" onclick="switchTab('family', this); return false;">{{ _('Family') }}</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="tab-overview" class="profile-content-section active">
+        <div class="overview-grid">
+        <!-- Left Sidebar (About) -->
+        <aside class="about-section">
+            <h2 class="section-title">{{ _('About') }}</h2>
+            
+            <div class="about-list">
+                <div class="about-item">
+                    <i data-lucide="user" class="about-item-icon"></i>
+                    <div class="about-item-content">
+                        <span class="about-item-label">{{ _('Born') }}</span>
+                        <span class="about-item-value">{{ format_date(data.birth_date) if data and data.birth_date else _('Unknown') }}</span>
+                    </div>
+                </div>
+                
+                <div class="about-item">
+                    <i data-lucide="map-pin" class="about-item-icon"></i>
+                    <div class="about-item-content">
+                        <span class="about-item-label">{{ _('Place') }}</span>
+                        <span class="about-item-value">Armavir, Russia</span>
+                    </div>
+                </div>
+                
+                <div class="about-item">
+                    <i data-lucide="briefcase" class="about-item-icon"></i>
+                    <div class="about-item-content">
+                        <span class="about-item-label">{{ _('Occupation') }}</span>
+                        <span class="about-item-value">&ndash;</span>
+                    </div>
+                </div>
+                
+                <div class="about-item" style="align-items: flex-start;">
+                    <i data-lucide="users" class="about-item-icon" style="margin-top: 4px;"></i>
+                    <div class="about-item-content" style="width: 100%;">
+                        <span class="about-item-label" style="margin-bottom: 8px;">{{ _('Family') }}</span>
+                        <div class="immediate-family-list" style="display: flex; flex-direction: column; gap: 8px;">
+                            {% for f in immediate_family[:4] %}
+                                <a href="{{ url_for('profile', person_id=f.id) }}" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
+                                    <img src="{% if f.photo != 'avatar.jpg' %}{{ url_for('static', filename=f.photo) }}{% else %}https://ui-avatars.com/api/?name={{ f.name | urlencode }}&background=F3F4F6&color=374151{% endif %}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;">
+                                    <span style="font-size: 1rem; font-weight: 500; color: var(--text-main);">{{ _(f.role|capitalize) }}</span>
+                                </a>
+                            {% endfor %}
+                            {% if immediate_family|length > 4 %}
+                                <button onclick="document.getElementById('family-modal').style.display='flex'" style="background: none; border: none; color: var(--text-muted); font-size: 0.85rem; padding: 0; cursor: pointer; text-align: left; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                                    <i data-lucide="more-horizontal" style="width: 16px; height: 16px;"></i> Show all ({{ immediate_family|length }})
+                                </button>
+                            {% endif %}
+                            {% if not immediate_family %}
+                                <span class="about-item-value">&ndash;</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <a href="{{ url_for('edit_relative', person_id=data.id) }}" class="btn-edit" style="display: inline-block; text-align: center; text-decoration: none;">{{ _('Edit profile') }}</a>
+        </aside>
+
+        <!-- Right Content (His story) -->
+        <main class="story-section">
+            <h2 class="section-title">
+                {% if data and data.gender == 'female' %}
+                    {{ _('Her story') }}
+                {% else %}
+                    {{ _('His story') }}
+                {% endif %}
+            </h2>
+            
+            <p class="story-text" style="white-space: pre-wrap;">{% if data and data.bio %}{{ data.bio }}{% else %}{{ _('Biography has not been added yet.') }}{% endif %}</p>
+            
+            <div class="story-photos">
+                <!-- Картинки заглушки -->
+                <img src="https://images.unsplash.com/photo-1502444330042-d1a1ddf9bb5b?q=80&w=600&auto=format&fit=crop" class="story-photo" alt="Photo 1">
+                <img src="https://images.unsplash.com/photo-1533090368676-1fd25485ce69?q=80&w=600&auto=format&fit=crop" class="story-photo" alt="Photo 2">
+                <img src="https://images.unsplash.com/photo-1549497538-303791108f95?q=80&w=600&auto=format&fit=crop" class="story-photo" alt="Photo 3">
+            </div>
+        </main>
+        </div>
+    </div>
+
+    <!-- Timeline Tab Content -->
+    <div id="tab-timeline" class="profile-content-section">
+        <div class="timeline-header">
+            <h2 class="timeline-title">{% if data and data.gender == 'female' %}{{ _('Her life') }}{% else %}{{ _('His life') }}{% endif %}</h2>
+            <div class="timeline-years">
+                {% if data and data.birth_date %}
+                    {{ data.birth_date[:4] }} &ndash; {% if data.is_alive == 0 and data.death_date %}{{ data.death_date[:4] }}{% else %}2026{% endif %}
+                {% else %}
+                    {{ _('Unknown') }}
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="timeline-container">
+            {% for era in eras %}
+            <div class="timeline-item-wrapper">
+                <div class="timeline-dot"></div>
+                <a href="{{ url_for('era', person_id=data.id, stage=era.title) }}" class="timeline-card">
+                    <div class="timeline-content">
+                        <div class="timeline-item-title">{{ _(era.title) }}</div>
+                        <div class="timeline-item-years">{{ era.start_year }} &ndash; {{ era.end_year }}</div>
+                        <div class="timeline-item-desc">{{ _(era.description) }}</div>
+                        <div class="timeline-item-stats">
+                            {{ era.events_count }} {{ _('memories') }} &bull; 0 {{ _('photos') }} &bull; 1 {{ _('contributor') }}
+                        </div>
+                    </div>
+                    <div class="timeline-media">
+                        {% if loop.index0 == 0 %}
+                        <img src="https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?q=80&w=600&auto=format&fit=crop" alt="Era cover">
+                        {% elif loop.index0 == 1 %}
+                        <img src="https://images.unsplash.com/photo-1549497538-303791108f95?q=80&w=600&auto=format&fit=crop" alt="Era cover">
+                        {% elif loop.index0 == 2 %}
+                        <img src="https://images.unsplash.com/photo-1533090368676-1fd25485ce69?q=80&w=600&auto=format&fit=crop" alt="Era cover">
+                        {% else %}
+                        <img src="https://images.unsplash.com/photo-1476703993599-0035a21b173d?q=80&w=600&auto=format&fit=crop" alt="Era cover">
+                        {% endif %}
+                    </div>
+                </a>
+                <div class="timeline-arrow">
+                    <i data-lucide="chevron-right"></i>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <!-- Family Modal -->
+    <div id="family-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 16px; width: 90%; max-width: 400px; max-height: 80vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);">
+            <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 500;">{{ _('Family') }}</h3>
+                <button onclick="document.getElementById('family-modal').style.display='none'" style="background: none; border: none; cursor: pointer; padding: 4px; color: var(--text-muted);">
+                    <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                </button>
+            </div>
+            <div style="padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;">
+                {% for f in immediate_family %}
+                    <a href="{{ url_for('profile', person_id=f.id) }}" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
+                        <img src="{% if f.photo != 'avatar.jpg' %}{{ url_for('static', filename=f.photo) }}{% else %}https://ui-avatars.com/api/?name={{ f.name | urlencode }}&background=F3F4F6&color=374151{% endif %}" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover;">
+                        <span style="font-size: 1.1rem; font-weight: 500; color: var(--text-main);">{{ _(f.role|capitalize) }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function switchTab(tabId, el) {
+        document.querySelectorAll('.profile-content-section').forEach(sec => sec.classList.remove('active'));
+        document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+        
+        let section = document.getElementById('tab-' + tabId);
+        if (section) section.classList.add('active');
+        if (el) el.classList.add('active');
+    }
+    </script>
+{% endblock %}

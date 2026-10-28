@@ -1,0 +1,543 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.title }} - FamilyArchive{% endblock %}
+
+{% block content %}
+    {% set role_names = {'parent': 'Родитель', 'child': 'Ребенок', 'spouse': 'Супруг(а)', 'sibling': 'Брат / Сестра'} %}
+    
+    <div class="section" style="max-width: 900px; margin: 0 auto;">
+        <!-- Back Navigation -->
+        <div style="margin-bottom: var(--space-8);">
+            <a href="/era/{{ event.target_person_id }}/{{ event.life_stage }}" class="btn btn-secondary" style="display: inline-flex; align-items: center;">
+                <i data-lucide="arrow-left" style="margin-right: var(--space-2); width: 18px; height: 18px;"></i>
+                Back to Era: {{ event.life_stage }}
+            </a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages" style="margin-bottom: var(--space-6);">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% endwith %}
+
+        <!-- Event Details -->
+        <div id="event-view-block" class="card" style="margin-bottom: var(--space-12);">
+            <div class="card-body">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-4);">
+                    <div>
+                        <span style="font-size: var(--text-xs); color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; background: var(--bg-secondary); padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+                            {{ event.category or 'Uncategorized' }}
+                        </span>
+                        {% if event.event_year %}
+                            <span style="font-size: var(--text-xs); color: var(--text-primary); margin-left: var(--space-2);">
+                                📅 {{ event.event_year }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <h1 style="font-size: var(--text-4xl); font-weight: 300; letter-spacing: -0.02em; margin-bottom: var(--space-6);">{{ event.title }}</h1>
+                
+                <!-- Publisher info -->
+                <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-8); padding-bottom: var(--space-6); border-bottom: 1px solid var(--border-light);">
+                    <img src="{{ url_for('static', filename=event.author_photo or 'avatar.jpg') }}" alt="" style="width: 40px; height: 40px; border-radius: var(--radius-full); object-fit: cover;">
+                    <div>
+                        <div style="font-size: var(--text-sm); font-weight: 500; color: var(--text-primary);">{{ event.author_name }}</div>
+                        <div style="font-size: var(--text-xs); color: var(--text-muted);">Published: {{ event.formatted_date }}</div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div style="font-size: var(--text-lg); line-height: 1.7; color: var(--text-primary); font-weight: 300; margin-bottom: var(--space-12); white-space: pre-wrap;">{{ event.description }}</div>
+
+                <!-- Event Media Gallery -->
+                {% if event.photo_links or event.video_link or event.audio_link %}
+                <div style="margin-bottom: var(--space-8);">
+                    <!-- Photos -->
+                    {% if event.photo_links %}
+                    <div style="margin-bottom: var(--space-8);">
+                        <h3 style="font-size: var(--text-base); font-weight: 500; margin-bottom: var(--space-4);"><i data-lucide="camera" style="width: 18px; height: 18px; display: inline-block; vertical-align: middle; margin-right: var(--space-2);"></i> Photo Archive</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-4);">
+                            {% for link in event.photo_links.split(',') %}
+                                {% set clean_link = link.strip() %}
+                                {% if clean_link %}
+                                    <div onclick="openLightbox('{{ url_for('static', filename=clean_link) if not clean_link.startswith('http') else clean_link }}')" style="cursor: pointer; aspect-ratio: 1; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-light); transition: transform 0.2s, box-shadow 0.2s;">
+                                        <img src="{{ url_for('static', filename=clean_link) if not clean_link.startswith('http') else clean_link }}" alt="Event photo" style="width: 100%; height: 100%; object-fit: cover;">
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Audio -->
+                    {% if event.audio_link %}
+                    <div style="margin-bottom: var(--space-8);">
+                        <h3 style="font-size: var(--text-base); font-weight: 500; margin-bottom: var(--space-4);"><i data-lucide="mic" style="width: 18px; height: 18px; display: inline-block; vertical-align: middle; margin-right: var(--space-2);"></i> Audio Story</h3>
+                        <div style="background: var(--bg-secondary); padding: var(--space-4); border-radius: var(--radius-lg); border: 1px solid var(--border-light);">
+                            <audio controls style="width: 100%;">
+                                <source src="{{ url_for('static', filename=event.audio_link) if not event.audio_link.startswith('http') else event.audio_link }}">
+                                Your browser does not support the audio element.
+                            </audio>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Video -->
+                    {% if event.video_link %}
+                    <div style="margin-bottom: var(--space-8);">
+                        <h3 style="font-size: var(--text-base); font-weight: 500; margin-bottom: var(--space-4);"><i data-lucide="video" style="width: 18px; height: 18px; display: inline-block; vertical-align: middle; margin-right: var(--space-2);"></i> Video</h3>
+                        <div data-video-url="{{ event.video_link }}" style="position: relative; width: 100%; padding-top: 56.25%; background: var(--bg-secondary); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border-light);">
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">Loading video...</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Controls -->
+                {% if g.user and g.user.id == event.author_id %}
+                <div style="display: flex; gap: var(--space-4); margin-top: var(--space-8); padding-top: var(--space-6); border-top: 1px solid var(--border-light);">
+                    <button type="button" class="btn btn-secondary" onclick="toggleEventEdit()">
+                        <i data-lucide="edit-3" style="width: 18px; height: 18px; margin-right: var(--space-2);"></i> Edit Story
+                    </button>
+                    <form action="/delete_event/{{ event.id }}" method="POST" style="margin: 0;" onsubmit="return confirm('Are you sure you want to delete this story and all contributions?');">
+                        <button type="submit" class="btn btn-secondary" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
+                            <i data-lucide="trash-2" style="width: 18px; height: 18px; margin-right: var(--space-2);"></i> Delete
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Edit Event Form (Hidden by default) -->
+        {% if g.user and g.user.id == event.author_id %}
+        <div id="event-edit-block" class="card" style="display: none; margin-bottom: var(--space-12);">
+            <div class="card-header">
+                <h3 class="card-title">Edit Story</h3>
+            </div>
+            
+            <form action="/edit_event/{{ event.id }}" method="POST" enctype="multipart/form-data" class="card-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
+                    <div class="form-group">
+                        <label for="edit_title" class="form-label">Title <span style="color: red;">*</span></label>
+                        <input type="text" id="edit_title" name="title" class="form-control" value="{{ event.title }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_event_year" class="form-label">Year or Period</label>
+                        <input type="text" id="edit_event_year" name="event_year" class="form-control" value="{{ event.event_year or '' }}">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_category" class="form-label">Category <span style="color: red;">*</span></label>
+                    <select name="category" id="edit_category" class="form-control" required>
+                        {% set categories = ["Семья и близкие", "Путешествия", "Работа", "Быт", "Переживания", "Праздники и традиции", "Учеба и достижения", "Хобби и увлечения", "Друзья", "Важное событие"] %}
+                        {% for cat in categories %}
+                        <option value="{{ cat }}" {% if event.category == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_description" class="form-label">Story / Description <span style="color: red;">*</span></label>
+                    <textarea id="edit_description" name="description" class="form-control" required style="min-height: 150px;">{{ event.description }}</textarea>
+                </div>
+
+                <div style="margin-top: var(--space-8); margin-bottom: var(--space-8); padding: var(--space-6); background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: var(--radius-lg);">
+                    <h4 style="font-size: var(--text-sm); font-weight: 500; margin-bottom: var(--space-4);">Update Media (leave empty to keep current)</h4>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4);">
+                        <div>
+                            <label class="form-label" style="font-size: var(--text-xs);"><i data-lucide="camera" style="width:14px; height:14px; display:inline-block; vertical-align:middle;"></i> Add New Photos</label>
+                            <input type="file" name="photos" class="form-control" multiple accept="image/*" style="padding: 6px; font-size: var(--text-xs);">
+                            <input type="text" name="photo_links" class="form-control" value="{{ event.photo_links or '' }}" placeholder="URLs (comma separated)" style="margin-top: var(--space-2); font-size: var(--text-xs);">
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size: var(--text-xs);"><i data-lucide="video" style="width:14px; height:14px; display:inline-block; vertical-align:middle;"></i> Update Video</label>
+                            <input type="file" name="video_file" class="form-control" accept="video/*" style="padding: 6px; font-size: var(--text-xs);">
+                            <input type="url" name="video_link" class="form-control" value="{{ event.video_link or '' }}" placeholder="YouTube/Drive Link" style="margin-top: var(--space-2); font-size: var(--text-xs);">
+                            {% if event.video_link %}
+                            <label style="display: flex; align-items: center; margin-top: 8px; font-size: 0.8rem; color: #ef4444; font-weight: 500;">
+                                <input type="checkbox" name="delete_video" value="1" style="margin-right: 6px;"> Delete Video
+                            </label>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size: var(--text-xs);"><i data-lucide="mic" style="width:14px; height:14px; display:inline-block; vertical-align:middle;"></i> Update Audio</label>
+                            <input type="file" name="audio_file" class="form-control" accept="audio/*" style="padding: 6px; font-size: var(--text-xs);">
+                            <input type="url" name="audio_link" class="form-control" value="{{ event.audio_link or '' }}" placeholder="Audio Link" style="margin-top: var(--space-2); font-size: var(--text-xs);">
+                            {% if event.audio_link %}
+                            <label style="display: flex; align-items: center; margin-top: 8px; font-size: 0.8rem; color: #ef4444; font-weight: 500;">
+                                <input type="checkbox" name="delete_audio" value="1" style="margin-right: 6px;"> Delete Audio
+                            </label>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: var(--space-4);">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="button" class="btn btn-secondary" onclick="toggleEventEdit()">Cancel</button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Contributions -->
+        <div style="margin-bottom: var(--space-12);">
+            <h2 style="font-size: var(--text-2xl); font-weight: 300; margin-bottom: var(--space-6); text-align: center;">Family Memories</h2>
+            
+            <div style="display: flex; flex-direction: column; gap: var(--space-6);">
+                {% if contributions %}
+                    {% for c in contributions %}
+                    <div class="card">
+                        <div class="card-body" id="contrib-view-{{ c.id }}">
+                            <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4);">
+                                <img src="{{ url_for('static', filename=c.author_photo or 'avatar.jpg') }}" alt="" style="width: 32px; height: 32px; border-radius: var(--radius-full); object-fit: cover;">
+                                <div>
+                                    <div style="font-size: var(--text-sm); font-weight: 500; color: var(--text-primary);">{{ c.author_name }}</div>
+                                    <div style="font-size: var(--text-xs); color: var(--text-muted);">Added: {{ c.formatted_date }}</div>
+                                </div>
+                            </div>
+                            
+                            <div style="font-size: var(--text-base); line-height: 1.6; color: var(--text-secondary); margin-bottom: var(--space-6); white-space: pre-wrap; font-style: italic;">"{{ c.content }}"</div>
+
+                            <!-- Contrib Media -->
+                            {% if c.photo_links or c.video_link or c.audio_link %}
+                            <div style="margin-bottom: var(--space-4);">
+                                <!-- Photos -->
+                                {% if c.photo_links %}
+                                <div style="display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-4);">
+                                    {% for link in c.photo_links.split(',') %}
+                                        {% set clean_link = link.strip() %}
+                                        {% if clean_link %}
+                                            <div onclick="openLightbox('{{ url_for('static', filename=clean_link) if not clean_link.startswith('http') else clean_link }}')" style="width: 80px; height: 80px; cursor: pointer; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border-light);">
+                                                <img src="{{ url_for('static', filename=clean_link) if not clean_link.startswith('http') else clean_link }}" alt="Contrib photo" style="width: 100%; height: 100%; object-fit: cover;">
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+
+                                <!-- Audio -->
+                                {% if c.audio_link %}
+                                <div style="margin-bottom: var(--space-4); max-width: 300px;">
+                                    <audio controls style="width: 100%; height: 32px;">
+                                        <source src="{{ url_for('static', filename=c.audio_link) if not c.audio_link.startswith('http') else c.audio_link }}">
+                                    </audio>
+                                </div>
+                                {% endif %}
+
+                                <!-- Video -->
+                                {% if c.video_link %}
+                                <div data-video-url="{{ c.video_link }}" style="position: relative; max-width: 400px; padding-top: 56.25%; background: var(--bg-secondary); border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-light);">
+                                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">Loading video...</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+
+                            <!-- Contrib Controls -->
+                            {% if g.user and g.user.id == c.author_id %}
+                            <div style="display: flex; gap: var(--space-3); border-top: 1px solid var(--border-light); padding-top: var(--space-3);">
+                                <button type="button" class="btn btn-secondary" style="padding: 4px 12px; font-size: var(--text-xs);" onclick="toggleContribEdit('{{ c.id }}')">Edit</button>
+                                <form action="/delete_contribution/{{ c.id }}" method="POST" style="margin: 0;" onsubmit="return confirm('Delete this contribution?');">
+                                    <button type="submit" class="btn btn-secondary" style="padding: 4px 12px; font-size: var(--text-xs); color: #ef4444;">Delete</button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Edit Contrib Form -->
+                        {% if g.user and g.user.id == c.author_id %}
+                        <div id="contrib-edit-{{ c.id }}" class="card-body" style="display: none;">
+                            <h4 style="font-size: var(--text-base); margin-bottom: var(--space-4);">Edit Contribution</h4>
+                            <form action="/edit_contribution/{{ c.id }}" method="POST" enctype="multipart/form-data">
+                                <div class="form-group">
+                                    <label for="content-{{ c.id }}" class="form-label">Your Memory</label>
+                                    <textarea id="content-{{ c.id }}" name="content" class="form-control" required style="min-height: 80px;">{{ c.content }}</textarea>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); margin-bottom: var(--space-4); padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-md);">
+                                    <div>
+                                        <label class="form-label" style="font-size: var(--text-xs);">Photos</label>
+                                        <input type="file" name="photos" class="form-control" multiple accept="image/*" style="padding: 4px; font-size: var(--text-xs);">
+                                        <input type="text" name="photo_links" class="form-control" value="{{ c.photo_links or '' }}" placeholder="URLs" style="margin-top: 4px; font-size: var(--text-xs);">
+                                    </div>
+                                    <div>
+                                        <label class="form-label" style="font-size: var(--text-xs);">Video</label>
+                                        <input type="file" name="video_file" class="form-control" accept="video/*" style="padding: 4px; font-size: var(--text-xs);">
+                                        <input type="url" name="video_link" class="form-control" value="{{ c.video_link or '' }}" style="margin-top: 4px; font-size: var(--text-xs);">
+                                        {% if c.video_link %}
+                                        <label style="display: flex; align-items: center; margin-top: 4px; font-size: 0.75rem; color: #ef4444;">
+                                            <input type="checkbox" name="delete_video" value="1" style="margin-right: 4px;"> Delete Video
+                                        </label>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <label class="form-label" style="font-size: var(--text-xs);">Audio</label>
+                                        <input type="file" name="audio_file" class="form-control" accept="audio/*" style="padding: 4px; font-size: var(--text-xs);">
+                                        <input type="url" name="audio_link" class="form-control" value="{{ c.audio_link or '' }}" style="margin-top: 4px; font-size: var(--text-xs);">
+                                        {% if c.audio_link %}
+                                        <label style="display: flex; align-items: center; margin-top: 4px; font-size: 0.75rem; color: #ef4444;">
+                                            <input type="checkbox" name="delete_audio" value="1" style="margin-right: 4px;"> Delete Audio
+                                        </label>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; gap: var(--space-4);">
+                                    <button type="submit" class="btn btn-primary" style="padding: 6px 16px; font-size: var(--text-sm);">Save</button>
+                                    <button type="button" class="btn btn-secondary" style="padding: 6px 16px; font-size: var(--text-sm);" onclick="toggleContribEdit('{{ c.id }}')">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="text-align: center; padding: var(--space-8); color: var(--text-muted); border: 1px dashed var(--border-medium); border-radius: var(--radius-lg);">
+                        No family members have contributed yet. Be the first!
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Add Contribution Form -->
+            {% if g.user %}
+            <div class="card" style="margin-top: var(--space-8);">
+                <div class="card-header">
+                    <h3 class="card-title">Add Your Perspective</h3>
+                </div>
+                
+                <form id="contribution-form" action="/add_contribution/{{ event.id }}" method="POST" enctype="multipart/form-data" class="card-body">
+                    <div class="form-group">
+                        <label for="contrib_content" class="form-label">What do you remember? <span style="color: red;">*</span></label>
+                        <textarea id="contrib_content" name="content" class="form-control" placeholder="Write your version of events..." required style="min-height: 100px;"></textarea>
+                    </div>
+
+                    <!-- Voice Recorder -->
+                    <div style="margin-bottom: var(--space-6); padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+                        <h4 style="font-size: var(--text-sm); font-weight: 500; margin-bottom: var(--space-4); display: flex; align-items: center;">
+                            <i data-lucide="mic" style="margin-right: var(--space-2); width: 16px; height: 16px;"></i> Record Voice Note
+                        </h4>
+                        <div style="display: flex; align-items: center; gap: var(--space-4);">
+                            <button type="button" id="record-btn" class="btn btn-secondary" style="border-radius: var(--radius-full); color: var(--text-primary);">
+                                Record
+                            </button>
+                            <button type="button" id="stop-btn" class="btn btn-secondary" style="display: none; border-radius: var(--radius-full); color: #ef4444; border-color: rgba(239,68,68,0.3);">
+                                Stop Recording
+                            </button>
+                            <span id="recording-status" style="font-size: var(--text-xs); color: var(--text-muted);">Microphone ready</span>
+                        </div>
+                        <audio id="audio-preview" controls style="display: none; width: 100%; margin-top: var(--space-4); height: 32px;"></audio>
+                    </div>
+
+                    <!-- Media Upload -->
+                    <div style="margin-bottom: var(--space-6); padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+                        <h4 style="font-size: var(--text-sm); font-weight: 500; margin-bottom: var(--space-4);">Attach Files</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-4);">
+                            <div>
+                                <label class="form-label" style="font-size: var(--text-xs);">Photos</label>
+                                <input type="file" name="photos" class="form-control" multiple accept="image/*" style="padding: 4px; font-size: var(--text-xs);">
+                                <input type="text" name="photo_links" class="form-control" placeholder="URLs" style="margin-top: 4px; font-size: var(--text-xs);">
+                            </div>
+                            <div>
+                                <label class="form-label" style="font-size: var(--text-xs);">Video</label>
+                                <input type="file" name="video_file" class="form-control" accept="video/*" style="padding: 4px; font-size: var(--text-xs);">
+                                <input type="url" name="video_link" class="form-control" placeholder="URL" style="margin-top: 4px; font-size: var(--text-xs);">
+                            </div>
+                            <div>
+                                <label class="form-label" style="font-size: var(--text-xs);">Audio</label>
+                                <input type="file" name="audio_file" class="form-control" accept="audio/*" style="padding: 4px; font-size: var(--text-xs);">
+                                <input type="url" name="audio_link" class="form-control" placeholder="URL" style="margin-top: 4px; font-size: var(--text-xs);">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        Publish Contribution
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Lightbox -->
+    <div id="lightbox" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center;" onclick="closeLightbox()">
+        <span style="position: absolute; top: 20px; right: 20px; color: white; font-size: 30px; cursor: pointer; padding: 10px;">&times;</span>
+        <img id="lightbox-img" style="max-width: 90%; max-height: 90%; object-fit: contain;" onclick="event.stopPropagation()">
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Lightbox
+        function openLightbox(src) {
+            const lightbox = document.getElementById('lightbox');
+            const img = document.getElementById('lightbox-img');
+            img.src = src;
+            lightbox.style.display = 'flex';
+        }
+
+        function closeLightbox() {
+            const lightbox = document.getElementById('lightbox');
+            lightbox.style.display = 'none';
+        }
+
+        // Toggle Edit Event
+        function toggleEventEdit() {
+            const viewBlock = document.getElementById('event-view-block');
+            const editBlock = document.getElementById('event-edit-block');
+            if (viewBlock.style.display === 'none') {
+                viewBlock.style.display = 'block';
+                editBlock.style.display = 'none';
+            } else {
+                viewBlock.style.display = 'none';
+                editBlock.style.display = 'block';
+            }
+        }
+
+        // Toggle Edit Contrib
+        function toggleContribEdit(contribId) {
+            const viewDiv = document.getElementById(`contrib-view-${contribId}`);
+            const editDiv = document.getElementById(`contrib-edit-${contribId}`);
+            if (viewDiv.style.display === 'none') {
+                viewDiv.style.display = 'block';
+                editDiv.style.display = 'none';
+            } else {
+                viewDiv.style.display = 'none';
+                editDiv.style.display = 'block';
+            }
+        }
+
+        // Video Player Init
+        document.addEventListener("DOMContentLoaded", function() {
+            const containers = document.querySelectorAll('[data-video-url]');
+            containers.forEach(container => {
+                const url = container.getAttribute('data-video-url');
+                if (!url) return;
+                
+                let html = '';
+                const ytRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                const match = url.match(ytRegExp);
+                
+                if (match && match[2].length === 11) {
+                    const videoId = match[2];
+                    html = `<iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen style="position:absolute; top:0; left:0; width:100%; height:100%;"></iframe>`;
+                } else {
+                    const cleanUrl = url.startsWith('http') ? url : `/static/${url}`;
+                    html = `<video controls style="position:absolute; top:0; left:0; width:100%; height:100%;">
+                                <source src="${cleanUrl}">
+                            </video>`;
+                }
+                container.innerHTML = html;
+            });
+        });
+
+        // Voice Recorder Logic
+        {% if g.user %}
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioBlob = null;
+        let streamObj = null;
+
+        const recordBtn = document.getElementById('record-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const recordingStatus = document.getElementById('recording-status');
+        const audioPreview = document.getElementById('audio-preview');
+
+        if(recordBtn) {
+            recordBtn.addEventListener('click', async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    streamObj = stream;
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        audioPreview.src = audioUrl;
+                        audioPreview.style.display = 'block';
+                        recordingStatus.textContent = 'Recording ready to play or submit.';
+                        recordingStatus.style.color = 'var(--text-primary)';
+                    };
+
+                    mediaRecorder.start();
+                    recordBtn.style.display = 'none';
+                    stopBtn.style.display = 'inline-flex';
+                    recordingStatus.textContent = 'Recording... Speak now.';
+                    recordingStatus.style.color = '#ef4444';
+                } catch (err) {
+                    console.error('Microphone error:', err);
+                    alert('Could not access microphone.');
+                }
+            });
+        }
+
+        if(stopBtn) {
+            stopBtn.addEventListener('click', () => {
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                    if (streamObj) {
+                        streamObj.getTracks().forEach(track => track.stop());
+                    }
+                    stopBtn.style.display = 'none';
+                    recordBtn.style.display = 'inline-flex';
+                    recordBtn.textContent = 'Record Again';
+                }
+            });
+        }
+
+        const form = document.getElementById('contribution-form');
+        if(form) {
+            form.addEventListener('submit', async (e) => {
+                if (audioBlob) {
+                    e.preventDefault(); 
+                    
+                    const formData = new FormData(form);
+                    formData.append('audio_file', audioBlob, 'recorded_voice.webm');
+
+                    const submitButton = form.querySelector('button[type="submit"]');
+                    const originalText = submitButton.textContent;
+                    submitButton.textContent = 'Saving...';
+                    submitButton.disabled = true;
+
+                    try {
+                        const response = await fetch(form.action, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        if (response.ok) {
+                            window.location.reload();
+                        } else {
+                            alert('Error submitting.');
+                            submitButton.textContent = originalText;
+                            submitButton.disabled = false;
+                        }
+                    } catch (err) {
+                        console.error('Network Error:', err);
+                        alert('Network Error.');
+                        submitButton.textContent = originalText;
+                        submitButton.disabled = false;
+                    }
+                }
+            });
+        }
+        {% endif %}
+    </script>
+{% endblock %}

@@ -1,0 +1,72 @@
+/* Responsive Adjustments */
+
+/* Desktop (large screens) */
+@media (min-width: 1024px) {
+    .auth-image-side {
+        display: block;
+    }
+}
+
+/* Tablet (medium screens) */
+@media (max-width: 768px) {
+    .header-container {
+        padding: var(--space-4);
+    }
+    
+    .main-content {
+        padding: var(--space-6) var(--space-4);
+    }
+
+    .profile-name {
+        font-size: var(--text-3xl);
+    }
+
+    .profile-portrait {
+        width: 120px;
+        height: 120px;
+    }
+
+    .dashboard-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .tree-tier-nodes {
+        gap: var(--space-4);
+    }
+    
+    .person-node {
+        width: 140px;
+    }
+}
+
+/* Mobile (small screens) */
+@media (max-width: 480px) {
+    .dashboard-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .header-nav {
+        display: none; /* Can be replaced with a hamburger menu logic if desired */
+    }
+    
+    .person-node {
+        width: 120px;
+    }
+    
+    .node-avatar {
+        width: 56px;
+        height: 56px;
+    }
+    
+    .timeline::before {
+        left: 0;
+    }
+    
+    .timeline {
+        padding-left: var(--space-6);
+    }
+    
+    .timeline-dot {
+        left: -28px;
+    }
+}

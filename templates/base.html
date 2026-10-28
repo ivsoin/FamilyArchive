@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FamilyArchive{% endblock %}</title>
+    
+    <!-- Design System CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <!-- Premium Tesla-Inspired Header -->
+        <header class="main-header">
+            <div class="header-container">
+                <!-- 1. Left: Brand -->
+                <div class="header-brand">
+                    <a href="/" class="header-logo">
+                        <i data-lucide="layers" style="margin-right: var(--space-2); width: 24px; height: 24px;"></i>
+                        FamilyArchive
+                    </a>
+                </div>
+                
+                <!-- 2. Center: Navigation -->
+                <nav class="header-nav">
+                    <a href="{% if g.user %}{{ url_for('dashboard') }}{% else %}/{% endif %}" class="nav-link">{{ _('Home') }}</a>
+                    <a href="{% if g.user %}{{ url_for('people') }}{% else %}/{% endif %}" class="nav-link">{{ _('People') }}</a>
+                    <a href="#" class="nav-link">{{ _('Memories') }}</a>
+                    <a href="#" class="nav-link">{{ _('Timeline') }}</a>
+                    <a href="{% if g.user %}{{ url_for('family_tree') }}{% else %}/{% endif %}" class="nav-link">{{ _('Family Tree') }}</a>
+                    <a href="#" class="nav-link">{{ _('Places') }}</a>
+                </nav>
+                
+                <!-- 3. Right: Actions -->
+                <div class="header-actions">
+                    <div class="lang-switcher" style="display: flex; gap: 8px; align-items: center; margin-right: 16px; font-size: 0.9rem;">
+                        <a href="{{ url_for('set_language', lang='en') }}" style="text-decoration: none; color: {% if current_lang == 'en' %}#1a1a1a; font-weight: 500{% else %}#6b7280{% endif %};">EN</a>
+                        <span style="color: #e5e7eb;">|</span>
+                        <a href="{{ url_for('set_language', lang='ru') }}" style="text-decoration: none; color: {% if current_lang == 'ru' %}#1a1a1a; font-weight: 500{% else %}#6b7280{% endif %};">RU</a>
+                    </div>
+                    
+                    <button class="search-btn" aria-label="Search">
+                        <i data-lucide="search" style="width: 20px; height: 20px;"></i>
+                    </button>
+                    
+                    {% if g.user %}
+                        <a href="/profile/{{ g.user.id }}" class="profile-btn" aria-label="Profile" title="{{ g.user.name }}">
+                            <img src="https://ui-avatars.com/api/?name={{ g.user.name | urlencode }}&background=E5E7EB&color=374151&rounded=true" alt="Profile Picture">
+                        </a>
+                        <a href="/logout" class="nav-link" style="padding: var(--space-2);" title="Sign Out">
+                            <i data-lucide="log-out" style="width: 20px; height: 20px;"></i>
+                        </a>
+                    {% else %}
+                        <a href="/login" class="nav-link">{{ _('Log in') }}</a>
+                        <a href="/register" class="btn btn-primary" style="padding: 6px 16px; font-size: var(--text-sm); border-radius: var(--radius-full);">{{ _('Sign up') }}</a>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages" style="margin-bottom: var(--space-6);">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Initialize Lucide Icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

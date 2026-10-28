@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+
+{% block title %}FamilyArchive - {{ data.name }}{% endblock %}
+
+{% block content %}
+<div class="section" style="max-width: 800px; margin: 0 auto;">
+    {% set role_names = {'parent': 'Родитель', 'child': 'Ребенок', 'spouse': 'Супруг(а)', 'sibling': 'Брат / Сестра'} %}
+    
+    {% if g.user and g.user.id == data.id and g.user.email and not g.user.is_email_verified %}
+    <div class="alert alert-info" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-8);">
+        <div>
+            <strong>Внимание!</strong> Пожалуйста, подтвердите ваш адрес электронной почты (<b>{{ g.user.email }}</b>).
+        </div>
+        <a href="{{ url_for('resend_verification') }}" class="btn btn-secondary" style="padding: var(--space-2) var(--space-4); font-size: var(--text-xs);">
+            Отправить повторно
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Profile Header -->
+    <div class="profile-header">
+        {% if data.photo %}
+        <img class="profile-portrait" src="{{ url_for('static', filename=data.photo) }}" alt="{{ data.name }}">
+        {% endif %}
+        
+        <h1 class="profile-name">
+            {% if data.first_name %}
+                {{ data.first_name }} {{ data.patronymic }} {{ data.last_name }}
+                {% if data.maiden_name %}
+                    <span style="font-size: 0.5em; color: var(--text-muted); font-weight: 400; display: block; margin-top: var(--space-2);">(в дев. {{ data.maiden_name }})</span>
+                {% endif %}
+            {% else %}
+                {{ data.name }}
+            {% endif %}
+        </h1>
+        
+        <div class="profile-years">
+            {% if data.birth_date %}
+                {% set b_parts = data.birth_date.split('-') %}
+                {% if b_parts|length == 3 %}{{ b_parts[2] }}.{{ b_parts[1] }}.{{ b_parts[0] }}{% else %}{{ data.birth_date }}{% endif %}
+            {% endif %}
+            &mdash;
+            {% if data.is_alive %}
+                <span style="color: var(--accent-color); font-weight: 500;">Настоящее время</span>
+            {% elif data.death_date %}
+                {% set d_parts = data.death_date.split('-') %}
+                {% if d_parts|length == 3 %}{{ d_parts[2] }}.{{ d_parts[1] }}.{{ d_parts[0] }}{% else %}{{ data.death_date }}{% endif %}
+            {% endif %}
+        </div>
+        
+        <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2); text-transform: uppercase; letter-spacing: 0.1em;">
+            {{ data.role }}
+        </div>
+
+        {% if not data.password_hash %}
+            <div style="margin-top: var(--space-6);">
+                {% if data.invite_code %}
+                    <div style="padding: var(--space-3) var(--space-6); background: var(--bg-secondary); border: 1px solid var(--border-medium); border-radius: var(--radius-full); font-size: var(--text-sm); color: var(--text-primary);">
+                        Код для входа: <strong style="font-family: monospace; letter-spacing: 2px;">{{ data.invite_code }}</strong>
+                    </div>
+                {% elif g.user %}
+                    <a href="/generate_invite/{{ person_id }}" class="btn btn-secondary">
+                        Сгенерировать код приглашения
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Biography -->
+    {% if data.bio %}
+    <div style="margin-bottom: var(--space-12); font-size: var(--text-lg); line-height: 1.7; color: var(--text-secondary); font-weight: 300; text-align: center;">
+        "{{ data.bio }}"
+    </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div style="display: flex; gap: var(--space-4); justify-content: center; flex-wrap: wrap; margin-bottom: var(--space-16);">
+        {% if g.user %}
+        <a href="/dashboard?root_id={{ person_id }}" class="btn btn-secondary">
+            <i data-lucide="git-branch" style="margin-right: var(--space-2); width: 18px; height: 18px;"></i>
+            Посмотреть древо
+        </a>
+
+        <a href="/add?target_id={{ person_id }}" class="btn btn-primary">
+            <i data-lucide="user-plus" style="margin-right: var(--space-2); width: 18px; height: 18px;"></i>
+            Добавить родственника
+        </a>
+        {% endif %}
+
+        {% if g.user and (g.user.id == person_id or not data.password_hash) %}
+        <a href="/edit/{{ person_id }}" class="btn btn-secondary">
+            <i data-lucide="edit-3" style="margin-right: var(--space-2); width: 18px; height: 18px;"></i>
+            Редактировать
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Main Action: Life Story Mode -->
+    <div style="text-align: center; margin-bottom: var(--space-12);">
+        <a href="/story/{{ person_id }}" class="btn btn-primary" style="padding: var(--space-4) var(--space-8); font-size: var(--text-lg); border-radius: var(--radius-full); box-shadow: var(--shadow-md);">
+            <i data-lucide="play-circle" style="margin-right: var(--space-2); width: 24px; height: 24px;"></i>
+            Посмотреть историю жизни
+        </a>
+    </div>
+
+    <!-- Life Timeline -->
+    <div class="card" style="margin-bottom: var(--space-12);">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="card-title">Жизненный путь</h3>
+            <a href="/add_event_form/{{ person_id }}" class="btn btn-secondary" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4);">
+                + Добавить событие
+            </a>
+        </div>
+        <div class="card-body">
+            {% if timeline %}
+            <div style="position: relative; padding-left: var(--space-6); border-left: 2px solid var(--border-light);">
+                {% for ev in timeline %}
+                <div style="position: relative; margin-bottom: var(--space-6);">
+                    <div style="position: absolute; left: calc(var(--space-6) * -1 - 5px); top: 5px; width: 10px; height: 10px; background: var(--accent-color); border-radius: 50%; box-shadow: 0 0 0 4px var(--bg-primary);"></div>
+                    <div style="font-weight: 600; font-size: var(--text-sm); color: var(--accent-color); margin-bottom: var(--space-1);">{{ ev.event_year or 'Неизвестный год' }}</div>
+                    <div style="font-weight: 500; color: var(--text-primary); margin-bottom: var(--space-1);">{{ ev.title }}</div>
+                    <div style="font-size: var(--text-sm); color: var(--text-secondary); line-height: 1.4;">{{ ev.description[:100] }}{% if ev.description|length > 100 %}...{% endif %}</div>
+                    <div style="margin-top: var(--space-2);">
+                        <a href="/event/{{ ev.id }}" style="font-size: var(--text-xs); font-weight: 500; color: var(--accent-color); text-decoration: none;">Читать подробнее &rarr;</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: var(--space-8); color: var(--text-muted); font-size: var(--text-sm);">
+                История пока не заполнена.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Eras of Life (Grid) -->
+    <div class="card" style="margin-bottom: var(--space-12);">
+        <div class="card-header">
+            <h3 class="card-title">Эпохи жизни</h3>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-4);">
+                {% for era in eras %}
+                <a href="/era/{{ person_id }}/{{ era.title }}" style="display: block; padding: var(--space-6); background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: var(--radius-lg); text-decoration: none; transition: all var(--transition-base);">
+                    <div style="font-weight: 500; color: var(--text-primary); margin-bottom: var(--space-2);">{{ era.title }}</div>
+                    <div style="font-size: var(--text-sm); color: var(--text-muted); line-height: 1.5; margin-bottom: var(--space-3);">{{ era.description }}</div>
+                    <div style="font-size: var(--text-xs); font-weight: 600; color: var(--accent-color);">
+                        {% if era.events_count > 0 %}{{ era.events_count }} событий{% else %}Нет событий{% endif %}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Today / Reflections -->
+    <div class="card" style="margin-bottom: var(--space-12);">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="card-title">Сегодня (Интервью и мысли)</h3>
+            {% if g.user and g.user.id == person_id %}
+            <button onclick="document.getElementById('add-reflection-modal').style.display='block'" class="btn btn-secondary" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4);">
+                + Записать мысль
+            </button>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if reflections %}
+            <div style="display: flex; flex-direction: column; gap: var(--space-6);">
+                {% for ref in reflections %}
+                <div style="padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-md); border-left: 3px solid var(--accent-color);">
+                    <div style="font-size: var(--text-xs); color: var(--text-muted); margin-bottom: var(--space-1);">{{ ref.year }} &bull; {{ ref.date }}</div>
+                    <div style="font-weight: 500; margin-bottom: var(--space-2); color: var(--text-primary);">{{ ref.question }}</div>
+                    <div style="font-size: var(--text-sm); color: var(--text-secondary); line-height: 1.5; font-style: italic;">"{{ ref.answer }}"</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; color: var(--text-muted); font-size: var(--text-sm);">
+                Записей пока нет.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Standalone Memories -->
+    <div class="card" style="margin-bottom: var(--space-12);">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="card-title">Коллективная память</h3>
+            {% if g.user and g.user.id != person_id %}
+            <button onclick="document.getElementById('add-memory-modal').style.display='block'" class="btn btn-secondary" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4);">
+                + Поделиться воспоминанием
+            </button>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if memories %}
+            <div style="display: flex; flex-direction: column; gap: var(--space-6);">
+                {% for mem in memories %}
+                <div style="padding: var(--space-6); background: var(--bg-secondary); border-radius: var(--radius-lg); border: 1px solid var(--border-light);">
+                    <div style="font-size: var(--text-sm); color: var(--text-secondary); line-height: 1.6; margin-bottom: var(--space-4);">
+                        {{ mem.content }}
+                    </div>
+                    {% if mem.photo_links or mem.video_link or mem.audio_link %}
+                    <div style="display: flex; gap: var(--space-2); margin-bottom: var(--space-4);">
+                        {% if mem.photo_links %}
+                        <span style="font-size: var(--text-xs); padding: 2px 6px; background: var(--bg-primary); border-radius: var(--radius-sm);"><i data-lucide="camera" style="width: 12px; height: 12px;"></i> Фото</span>
+                        {% endif %}
+                        {% if mem.video_link %}
+                        <span style="font-size: var(--text-xs); padding: 2px 6px; background: var(--bg-primary); border-radius: var(--radius-sm);"><i data-lucide="video" style="width: 12px; height: 12px;"></i> Видео</span>
+                        {% endif %}
+                        {% if mem.audio_link %}
+                        <span style="font-size: var(--text-xs); padding: 2px 6px; background: var(--bg-primary); border-radius: var(--radius-sm);"><i data-lucide="mic" style="width: 12px; height: 12px;"></i> Аудио</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    <div style="display: flex; justify-content: space-between; font-size: var(--text-xs); color: var(--text-muted); border-top: 1px solid var(--border-light); padding-top: var(--space-3);">
+                        <div>От: <strong>{{ mem.author_name }}</strong></div>
+                        <div>{{ mem.memory_year or mem.date }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; color: var(--text-muted); font-size: var(--text-sm);">
+                Пока нет воспоминаний от других родственников.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Places -->
+    <div class="card" style="margin-bottom: var(--space-12);">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="card-title">Значимые места</h3>
+            {% if g.user and g.user.id == person_id %}
+            <button onclick="document.getElementById('add-place-modal').style.display='block'" class="btn btn-secondary" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4);">
+                + Добавить место
+            </button>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if places %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4);">
+                {% for place in places %}
+                <div style="padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+                    <div style="font-weight: 500; color: var(--text-primary); margin-bottom: var(--space-1);">{{ place.name }}</div>
+                    {% if place.date_range %}
+                    <div style="font-size: var(--text-xs); color: var(--text-muted); margin-bottom: var(--space-2);">{{ place.date_range }}</div>
+                    {% endif %}
+                    <div style="font-size: var(--text-sm); color: var(--text-secondary); line-height: 1.4;">{{ place.description }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; color: var(--text-muted); font-size: var(--text-sm);">
+                Места не указаны.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Important People -->
+    <div class="card" style="margin-bottom: var(--space-12);">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="card-title">Важные люди</h3>
+            {% if g.user and g.user.id == person_id %}
+            <button onclick="document.getElementById('add-important-person-modal').style.display='block'" class="btn btn-secondary" style="font-size: var(--text-xs); padding: var(--space-2) var(--space-4);">
+                + Добавить человека
+            </button>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if important_people %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4);">
+                {% for ip in important_people %}
+                <div style="padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-md); border: 1px solid var(--border-light); display: flex; flex-direction: column;">
+                    <div style="font-weight: 500; color: var(--text-primary); margin-bottom: var(--space-1);">{{ ip.name }}</div>
+                    <div style="font-size: var(--text-xs); color: var(--accent-color); font-weight: 600; margin-bottom: var(--space-2); text-transform: uppercase;">{{ ip.role_label }}</div>
+                    {% if ip.period %}
+                    <div style="font-size: var(--text-xs); color: var(--text-muted); margin-bottom: var(--space-2);">{{ ip.period }}</div>
+                    {% endif %}
+                    <div style="font-size: var(--text-sm); color: var(--text-secondary); line-height: 1.4;">{{ ip.description }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; color: var(--text-muted); font-size: var(--text-sm);">
+                Здесь можно отметить людей, оказавших влияние на жизнь.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Modals -->
+    {% if g.user and g.user.id == person_id %}
+    <!-- Add Place Modal -->
+    <div id="add-place-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="card" style="width: 100%; max-width: 500px; margin: 10vh auto;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="card-title">Добавить значимое место</h3>
+                <button type="button" onclick="document.getElementById('add-place-modal').style.display='none'" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            <form action="/add_place/{{ person_id }}" method="POST" class="card-body">
+                <div class="form-group">
+                    <label class="form-label">Название места <span style="color: red;">*</span></label>
+                    <input type="text" name="name" class="form-control" required placeholder="г. Новосибирск, дом детства...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Период</label>
+                    <input type="text" name="date_range" class="form-control" placeholder="1990 - 2005">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Почему это место важно?</label>
+                    <textarea name="description" class="form-control" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Сохранить</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Important Person Modal -->
+    <div id="add-important-person-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="card" style="width: 100%; max-width: 500px; margin: 10vh auto;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="card-title">Добавить важного человека</h3>
+                <button type="button" onclick="document.getElementById('add-important-person-modal').style.display='none'" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            <form action="/add_important_person/{{ person_id }}" method="POST" class="card-body">
+                <div class="form-group">
+                    <label class="form-label">Имя <span style="color: red;">*</span></label>
+                    <input type="text" name="name" class="form-control" required placeholder="Иван Иванович">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Роль / Кто это? <span style="color: red;">*</span></label>
+                    <input type="text" name="role_label" class="form-control" required placeholder="Первый учитель, Лучший друг...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Период общения</label>
+                    <input type="text" name="period" class="form-control" placeholder="Со школьных лет">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">История / Почему этот человек важен?</label>
+                    <textarea name="description" class="form-control" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Сохранить</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+    {% if g.user and g.user.id == person_id %}
+    <div id="add-reflection-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="card" style="width: 100%; max-width: 500px; margin: 10vh auto;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="card-title">Записать мысль</h3>
+                <button type="button" onclick="document.getElementById('add-reflection-modal').style.display='none'" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            <form action="/add_reflection/{{ person_id }}" method="POST" class="card-body">
+                <div class="form-group">
+                    <label class="form-label">Вопрос (опционально)</label>
+                    <select name="question" class="form-control">
+                        <option value="О чем я думаю сейчас">О чем я думаю сейчас</option>
+                        <option value="Чему я научился за этот год?">Чему я научился за этот год?</option>
+                        <option value="Главное событие месяца">Главное событие месяца</option>
+                        <option value="Совет будущим поколениям">Совет будущим поколениям</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ваш ответ / Мысль</label>
+                    <textarea name="answer" class="form-control" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Год</label>
+                    <input type="text" name="year" class="form-control" placeholder="2026">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Сохранить</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if g.user and g.user.id != person_id %}
+    <div id="add-memory-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="card" style="width: 100%; max-width: 500px; margin: 10vh auto;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="card-title">Поделиться воспоминанием</h3>
+                <button type="button" onclick="document.getElementById('add-memory-modal').style.display='none'" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            <form action="/add_memory/{{ person_id }}" method="POST" enctype="multipart/form-data" class="card-body">
+                <div class="form-group">
+                    <label class="form-label">Ваше воспоминание</label>
+                    <textarea name="content" class="form-control" rows="5" required placeholder="Я помню, как мы..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Примерный год (если помните)</label>
+                    <input type="text" name="memory_year" class="form-control" placeholder="Например, 1998 или Лето 2005">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Медиа (фото, аудио - опционально)</label>
+                    <input type="file" name="photos" class="form-control" accept="image/*" multiple style="margin-bottom: 8px;">
+                    <input type="file" name="audio_file" class="form-control" accept="audio/*">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Отправить</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Connections -->
+    {% if data.connections %}
+    <div class="card" style="margin-bottom: var(--space-12);">
+        <div class="card-header">
+            <h3 class="card-title">Близкие родственники</h3>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            <div style="display: flex; flex-direction: column;">
+                {% for conn_id, conn_role in data.connections.items() %}
+                {% if conn_id in family %}
+                <a href="/profile/{{ conn_id }}" style="display: flex; align-items: center; padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--border-light); text-decoration: none; transition: background var(--transition-base);">
+                    <img src="{{ url_for('static', filename=family[conn_id].photo) }}" alt="" style="width: 48px; height: 48px; border-radius: var(--radius-full); object-fit: cover; margin-right: var(--space-4);">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 500; color: var(--text-primary);">{{ family[conn_id].name }}</div>
+                        <div style="font-size: var(--text-xs); color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px;">{{ role_names.get(conn_role, conn_role) }}</div>
+                    </div>
+                    <i data-lucide="chevron-right" style="color: var(--text-muted); width: 20px; height: 20px;"></i>
+                </a>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Danger Zone -->
+    {% if g.user and (g.user.id == person_id or not data.password_hash) %}
+    <div style="text-align: center; margin-top: var(--space-16);">
+        <form action="/delete/{{ person_id }}" method="POST">
+            <button type="submit" style="background: none; border: none; color: #ef4444; font-size: var(--text-sm); text-decoration: underline; cursor: pointer;" onclick="return confirm('Вы уверены, что хотите скрыть этот профиль из архива?');">
+                Удалить профиль
+            </button>
+        </form>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

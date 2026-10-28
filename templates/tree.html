@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Family Tree - FamilyArchive{% endblock %}
+
+{% block content %}
+<div class="section">
+    {% if g.user and g.user.email and not g.user.is_email_verified %}
+    <div class="alert alert-info" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <strong>Notice:</strong> Please verify your email address (<b>{{ g.user.email }}</b>).
+        </div>
+        <a href="{{ url_for('resend_verification') }}" class="btn btn-secondary" style="padding: var(--space-2) var(--space-4); font-size: var(--text-xs);">Resend verification</a>
+    </div>
+    {% endif %}
+
+    <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <h1 class="section-title">
+                {% if current_root_id and current_root_id != g.user.id %}
+                    Family Tree (Focus: {{ root_person.first_name }})
+                {% else %}
+                    Good evening, {{ g.user.first_name if g.user.first_name else g.user.name }}
+                {% endif %}
+            </h1>
+            <p class="section-subtitle">
+                {% if current_root_id and current_root_id != g.user.id %}
+                    Viewing a specific branch of the family.
+                {% else %}
+                    Here is your family overview.
+                {% endif %}
+            </p>
+        </div>
+        
+        <div style="display: flex; gap: var(--space-4);">
+            {% if current_root_id and current_root_id != g.user.id %}
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back to My Tree</a>
+            {% endif %}
+            <a href="/add" class="btn btn-primary">Add Relative</a>
+        </div>
+    </div>
+
+    <!-- Tesla-style minimalist family tree -->
+    <div class="family-tree-section">
+        <div class="tree-canvas" style="position: relative; width: 100%; overflow-x: auto; min-height: 600px; padding: var(--space-12) 0;">
+            <svg id="tree-svg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0;"></svg>
+            
+            <div class="tree-content" style="position: relative; z-index: 1; display: inline-flex; flex-direction: column; align-items: center; gap: var(--space-16); min-width: 100%; padding: 0 var(--space-16);">
+                
+                {% macro render_node(person) %}
+                {% set is_root = (root_person and person.id == root_person.id) %}
+                <a href="/profile/{{ person.id }}" class="person-node {% if is_root %}current-user{% endif %}" id="node_{{ person.id }}" data-branch="{{ person.branch }}">
+                    <img src="{{ url_for('static', filename=person.photo) }}" class="node-avatar" alt="{{ person.name }}">
+                    <div class="node-name">
+                        {% if person.first_name %}
+                            {{ person.first_name }}<br>{{ person.last_name }}
+                        {% else %}
+                            {{ person.name }}
+                        {% endif %}
+                    </div>
+                    {% if person.calc_role and person.calc_role != 'Я' %}
+                    <div class="node-role">{{ person.calc_role }}</div>
+                    {% endif %}
+                    {% if person.years %}
+                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">{{ person.years }}</div>
+                    {% endif %}
+                </a>
+                {% endmacro %}
+
+                {% set tier_names = {
+                    -3: 'Great Grandparents',
+                    -2: 'Grandparents',
+                    -1: 'Parents / Aunts / Uncles',
+                    0: 'My Generation',
+                    1: 'Children / Nieces / Nephews',
+                    2: 'Grandchildren',
+                    3: 'Great Grandchildren',
+                    100: 'Other Relatives'
+                } %}
+
+                {% for t in tier_groups.keys()|sort %}
+                <div class="tree-tier-group">
+                    <div class="tree-tier-label">{{ tier_names.get(t, 'Generation ' ~ t) }}</div>
+                    <div class="tree-tier-nodes">
+                        {% for group in tier_groups[t] %}
+                            {% if group.type == 'couple' %}
+                                <div class="couple-group" style="display: flex; gap: var(--space-8); position: relative;" data-p1="{{ group.p1.id }}" data-p2="{{ group.p2.id }}">
+                                    {{ render_node(group.p1) }}
+                                    {{ render_node(group.p2) }}
+                                </div>
+                            {% else %}
+                                {{ render_node(group.person) }}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const edges = {{ edges_json | safe }};
+        const svg = document.getElementById('tree-svg');
+        const canvasContainer = document.querySelector('.tree-canvas');
+        
+        function drawTree() {
+            svg.innerHTML = '';
+            
+            svg.style.width = Math.max(canvasContainer.scrollWidth, canvasContainer.clientWidth) + 'px';
+            svg.style.height = Math.max(canvasContainer.scrollHeight, canvasContainer.clientHeight) + 'px';
+            
+            function getCoords(elem) {
+                const box = elem.getBoundingClientRect();
+                const canvasBox = canvasContainer.getBoundingClientRect();
+                return {
+                    x: box.left + box.width / 2 - canvasBox.left + canvasContainer.scrollLeft,
+                    y: box.top + box.height / 2 - canvasBox.top + canvasContainer.scrollTop,
+                    top: box.top - canvasBox.top + canvasContainer.scrollTop,
+                    bottom: box.bottom - canvasBox.top + canvasContainer.scrollTop,
+                    avatarY: box.top + 36 - canvasBox.top + canvasContainer.scrollTop // 36 is half of 72px avatar
+                };
+            }
+
+            // A neutral gray for relationships to fit the clean, premium aesthetic
+            const baseColor = "#d6d6d6";
+            
+            // Draw spouse lines
+            document.querySelectorAll('.couple-group').forEach(couple => {
+                const p1 = document.getElementById('node_' + couple.dataset.p1);
+                const p2 = document.getElementById('node_' + couple.dataset.p2);
+                if(p1 && p2) {
+                    const c1 = getCoords(p1);
+                    const c2 = getCoords(p2);
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", c1.x);
+                    line.setAttribute("y1", c1.avatarY);
+                    line.setAttribute("x2", c2.x);
+                    line.setAttribute("y2", c2.avatarY);
+                    
+                    line.setAttribute("stroke", baseColor);
+                    line.setAttribute("stroke-width", "2");
+                    svg.appendChild(line);
+                }
+            });
+
+            // Draw parent-child lines
+            edges.forEach(edge => {
+                if (edge.type === 'parent-child') {
+                    const parent = document.getElementById('node_' + edge.from);
+                    const child = document.getElementById('node_' + edge.to);
+                    
+                    if (parent && child) {
+                        let startX, startY;
+                        
+                        const coupleGroup = parent.closest('.couple-group');
+                        if (coupleGroup) {
+                            const p1 = document.getElementById('node_' + coupleGroup.dataset.p1);
+                            const p2 = document.getElementById('node_' + coupleGroup.dataset.p2);
+                            startX = (getCoords(p1).x + getCoords(p2).x) / 2;
+                            startY = getCoords(p1).avatarY;
+                        } else {
+                            const pCoords = getCoords(parent);
+                            startX = pCoords.x;
+                            startY = pCoords.bottom + 5;
+                        }
+                        
+                        const cCoords = getCoords(child);
+                        const endX = cCoords.x;
+                        const endY = cCoords.top - 5;
+                        
+                        const safeMidY = Math.max(startY + 20, endY - 40);
+                        const radius = 12;
+                        const dirX = Math.sign(endX - startX);
+                        
+                        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                        let d = "";
+                        
+                        if (Math.abs(startX - endX) < radius * 2) {
+                            d = `M ${startX} ${startY} V ${endY}`;
+                        } else {
+                            d = `M ${startX} ${startY} 
+                                 V ${safeMidY - radius} 
+                                 Q ${startX} ${safeMidY} ${startX + dirX * radius} ${safeMidY} 
+                                 H ${endX - dirX * radius} 
+                                 Q ${endX} ${safeMidY} ${endX} ${safeMidY + radius} 
+                                 V ${endY}`;
+                        }
+                        
+                        path.setAttribute("d", d);
+                        path.setAttribute("stroke", baseColor);
+                        path.setAttribute("stroke-width", "2");
+                        path.setAttribute("fill", "none");
+                        svg.appendChild(path);
+                    }
+                }
+            });
+        }
+        
+        drawTree();
+        
+        setTimeout(() => {
+            const currentUserId = "{{ current_root_id if current_root_id else (g.user.id if g.user else '') }}";
+            if (currentUserId) {
+                const userNode = document.getElementById('node_' + currentUserId);
+                if (userNode) {
+                    userNode.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                }
+            }
+        }, 100);
+        
+        window.addEventListener('resize', drawTree);
+    });
+</script>
+{% endblock %}

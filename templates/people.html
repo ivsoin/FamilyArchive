@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}People - FamilyArchive{% endblock %}
+
+{% block content %}
+<style>
+/* People Page specific styles */
+.people-container {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: var(--space-4) var(--space-8);
+}
+
+/* Page Header */
+.people-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end; 
+    margin-bottom: var(--space-8);
+}
+
+.people-title-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.people-title {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 3.5rem;
+    font-weight: normal;
+    color: #1a1a1a;
+    margin-bottom: var(--space-2);
+    letter-spacing: -0.01em;
+}
+
+.people-count {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+}
+
+.people-actions {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+    margin-bottom: 8px; /* Alignment tweak */
+}
+
+/* Search Input */
+.search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.search-input-wrapper svg {
+    position: absolute;
+    left: 14px;
+    color: var(--text-muted);
+    width: 18px;
+    height: 18px;
+}
+.search-input {
+    background-color: #f5f5f5;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    padding: 12px 16px 12px 42px;
+    font-size: 0.95rem;
+    width: 280px;
+    color: var(--text-primary);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+.search-input:focus {
+    outline: none;
+    background-color: #fff;
+    border-color: #d1d5db;
+    box-shadow: 0 0 0 4px rgba(0,0,0,0.03);
+}
+
+.btn-add {
+    background-color: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 12px 20px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color var(--transition-fast);
+}
+.btn-add:hover {
+    background-color: #333;
+}
+
+/* Filters & Views */
+.people-filters-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: var(--space-8);
+}
+
+.tabs {
+    display: flex;
+    gap: var(--space-8);
+}
+.tab {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    padding-bottom: var(--space-4);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all var(--transition-fast);
+}
+.tab:hover {
+    color: var(--text-primary);
+}
+.tab.active {
+    color: #1a1a1a;
+    border-bottom-color: #1a1a1a;
+    font-weight: 500;
+}
+
+.view-toggles {
+    display: flex;
+    gap: var(--space-2);
+    padding-bottom: var(--space-3);
+}
+.view-btn {
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+.view-btn.active {
+    background-color: #f0f0f0;
+    color: #1a1a1a;
+}
+.view-btn:hover:not(.active) {
+    background-color: #fafafa;
+}
+
+/* Grid */
+.people-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+}
+
+.person-card {
+    background-color: #fff;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.06);
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+}
+.person-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+}
+
+.person-photo {
+    width: 100%;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+    background-color: #f3f4f6;
+}
+
+.person-info {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.person-name {
+    font-weight: 600;
+    color: #1a1a1a;
+    font-size: 1.1rem;
+    letter-spacing: -0.01em;
+}
+.person-years {
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+.person-role {
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+@media (max-width: 1024px) {
+    .people-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+@media (max-width: 768px) {
+    .people-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .people-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-6);
+    }
+    .people-filters-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-4);
+    }
+    .tabs {
+        width: 100%;
+        overflow-x: auto;
+    }
+}
+@media (max-width: 480px) {
+    .people-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<div class="people-container">
+    <!-- Header -->
+    <div class="people-header">
+        <div class="people-title-group">
+            <h1 class="people-title">{{ _('People') }}</h1>
+            <span class="people-count">
+                {% if people|length > 0 %}{{ people|length }}{% else %}126{% endif %} {{ _('people in your family archive') }}
+            </span>
+        </div>
+        <div class="people-actions">
+            <div class="search-input-wrapper">
+                <i data-lucide="search"></i>
+                <input type="text" class="search-input" placeholder="{{ _('Search people...') }}">
+            </div>
+            <button class="btn-add">
+                <i data-lucide="plus" style="width: 18px; height: 18px;"></i> {{ _('Add person') }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters & Views -->
+    <div class="people-filters-row">
+        <div class="tabs">
+            <div class="tab active">{{ _('All') }}</div>
+            <div class="tab">{{ _('Family') }}</div>
+            <div class="tab">{{ _('By generation') }}</div>
+            <div class="tab">{{ _('A-Z') }}</div>
+        </div>
+        <div class="view-toggles">
+            <button class="view-btn active" aria-label="Grid view">
+                <i data-lucide="layout-grid" style="width: 20px; height: 20px;"></i>
+            </button>
+            <button class="view-btn" aria-label="List view">
+                <i data-lucide="list" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Grid -->
+    <div class="people-grid">
+        {% if people|length == 0 %}
+            <!-- ЗАГЛУШКА: Рендерится только если в БД нет людей (как просили на основе скриншота) -->
+            <a href="#" class="person-card">
+                <img src="https://images.unsplash.com/photo-1566492031516-e824c06f1577?q=80&w=600&auto=format&fit=crop" class="person-photo" alt="Denis Soin">
+                <div class="person-info">
+                    <div class="person-name">Denis Soin</div>
+                    <div class="person-years">1977 &ndash; present</div>
+                    <div class="person-role">Father</div>
+                </div>
+            </a>
+            <a href="#" class="person-card">
+                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=600&auto=format&fit=crop" class="person-photo" alt="Antonina Soin">
+                <div class="person-info">
+                    <div class="person-name">Antonina Soin</div>
+                    <div class="person-years">1980 &ndash; present</div>
+                    <div class="person-role">Mother</div>
+                </div>
+            </a>
+            <a href="#" class="person-card">
+                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=600&auto=format&fit=crop" class="person-photo" alt="Viktor Soin">
+                <div class="person-info">
+                    <div class="person-name">Viktor Soin</div>
+                    <div class="person-years">1957 &ndash; 2018</div>
+                    <div class="person-role">Grandfather</div>
+                </div>
+            </a>
+            <a href="#" class="person-card">
+                <img src="https://images.unsplash.com/photo-1581579438747-104c56891eb6?q=80&w=600&auto=format&fit=crop" class="person-photo" alt="Irina Soin">
+                <div class="person-info">
+                    <div class="person-name">Irina Soin</div>
+                    <div class="person-years">1958 &ndash; 2022</div>
+                    <div class="person-role">Grandmother</div>
+                </div>
+            </a>
+            <a href="#" class="person-card">
+                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600&auto=format&fit=crop" class="person-photo" alt="Pavel Davydov">
+                <div class="person-info">
+                    <div class="person-name">Pavel Davydov</div>
+                    <div class="person-years">1985 &ndash; present</div>
+                    <div class="person-role">Uncle</div>
+                </div>
+            </a>
+            <a href="#" class="person-card">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop" class="person-photo" alt="Valeria Davydova">
+                <div class="person-info">
+                    <div class="person-name">Valeria Davydova</div>
+                    <div class="person-years">1988 &ndash; present</div>
+                    <div class="person-role">Aunt</div>
+                </div>
+            </a>
+            <a href="#" class="person-card">
+                <img src="https://images.unsplash.com/photo-1519689680058-324335c77eba?q=80&w=600&auto=format&fit=crop" class="person-photo" alt="Ivan Soin">
+                <div class="person-info">
+                    <div class="person-name">Ivan Soin</div>
+                    <div class="person-years">2015 &ndash; present</div>
+                    <div class="person-role">Son</div>
+                </div>
+            </a>
+            <a href="#" class="person-card">
+                <img src="https://images.unsplash.com/photo-1595475207225-428b62bda831?q=80&w=600&auto=format&fit=crop" class="person-photo" alt="Sofia Soin">
+                <div class="person-info">
+                    <div class="person-name">Sofia Soin</div>
+                    <div class="person-years">2018 &ndash; present</div>
+                    <div class="person-role">Daughter</div>
+                </div>
+            </a>
+        {% else %}
+            <!-- Рендерим реальные данные из БД -->
+            {% for person in people %}
+            <a href="{{ url_for('profile', person_id=person.id) }}" class="person-card">
+                {% if person.photo %}
+                    <img src="{{ url_for('static', filename=person.photo) }}" class="person-photo" alt="{{ person.name }}">
+                {% else %}
+                    <!-- Если нет фото, генерируем аватар по имени -->
+                    <img src="https://ui-avatars.com/api/?name={{ person.name | urlencode }}&background=F3F4F6&color=374151&size=512&font-size=0.33" class="person-photo" alt="{{ person.name }}">
+                {% endif %}
+                <div class="person-info">
+                    <div class="person-name">{{ person.name }}</div>
+                    
+                    {% set birth = person.birth_date[:4] if person.birth_date else 'Unknown' %}
+                    {% set death = person.death_date[:4] if (person.death_date and person.is_alive == 0) else 'present' %}
+                    
+                    <div class="person-years">{{ _(birth) }} &ndash; {{ _(death) }} <span style="opacity: 0.7; margin-left: 2px;">{{ calculate_age(person.birth_date, person.death_date, person.is_alive) }}</span></div>
+                    <div class="person-role">{{ person.calc_role }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

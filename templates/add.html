@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Add Relative - FamilyArchive{% endblock %}
+
+{% block content %}
+<div class="section" style="max-width: 600px; margin: 0 auto;">
+    <div style="margin-bottom: var(--space-8);">
+        <a href="/" class="btn btn-secondary" style="display: inline-flex; align-items: center;">
+            <i data-lucide="arrow-left" style="margin-right: var(--space-2); width: 18px; height: 18px;"></i>
+            Back to Home
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            {% if target_person and target_person.id != g.user.id %}
+            <h3 class="card-title">Add relative for {{ target_person.name }}</h3>
+            {% else %}
+            <h3 class="card-title">Add New Relative</h3>
+            {% endif %}
+        </div>
+        
+        <form action="/add?target_id={{ request.args.get('target_id', g.user.id) }}" method="POST" enctype="multipart/form-data" class="card-body">
+            <div class="form-group">
+                <label for="person_id" class="form-label">Unique ID (English letters) <span style="color: red;">*</span></label>
+                <input type="text" id="person_id" name="person_id" class="form-control" placeholder="e.g. brother" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
+                <div class="form-group">
+                    <label for="last_name" class="form-label">Last Name <span style="color: red;">*</span></label>
+                    <input type="text" id="last_name" name="last_name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="first_name" class="form-label">First Name <span style="color: red;">*</span></label>
+                    <input type="text" id="first_name" name="first_name" class="form-control" required>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
+                <div class="form-group">
+                    <label for="patronymic" class="form-label">Middle Name</label>
+                    <input type="text" id="patronymic" name="patronymic" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="maiden_name" class="form-label">Maiden Name</label>
+                    <input type="text" id="maiden_name" name="maiden_name" class="form-control">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Gender <span style="color: red;">*</span></label>
+                <div style="display: flex; gap: var(--space-6); margin-top: var(--space-2);">
+                    <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer; color: var(--text-primary); font-size: var(--text-sm);">
+                        <input type="radio" name="gender" value="male" checked> Male
+                    </label>
+                    <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer; color: var(--text-primary); font-size: var(--text-sm);">
+                        <input type="radio" name="gender" value="female"> Female
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="role" class="form-label">Role in Family <span style="color: red;">*</span></label>
+                <select id="role" name="role" class="form-control" required>
+                    <option value="parent">Parent</option>
+                    <option value="child">Child</option>
+                    <option value="spouse">Spouse</option>
+                    <option value="sibling">Sibling</option>
+                </select>
+            </div>
+
+            <div style="display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: flex-end; margin-bottom: var(--space-4);">
+                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                    <label for="birth_date" class="form-label">Date of Birth</label>
+                    <input type="date" id="birth_date" name="birth_date" class="form-control">
+                </div>
+                <div class="form-group" id="death_date_container" style="display: none; flex: 1; margin-bottom: 0;">
+                    <label for="death_date" class="form-label">Date of Death</label>
+                    <input type="date" id="death_date" name="death_date" class="form-control">
+                </div>
+                <div class="form-group" style="flex: 1; margin-bottom: 0; padding-bottom: 10px;">
+                    <label style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); cursor: pointer; color: var(--text-primary);">
+                        <input type="checkbox" name="is_alive" id="is_alive" checked onchange="document.getElementById('death_date_container').style.display = this.checked ? 'none' : 'block';"> Alive
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="bio" class="form-label">Short Biography <span style="color: red;">*</span></label>
+                <textarea id="bio" name="bio" class="form-control" placeholder="Brief life story..." required style="min-height: 100px;"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="photo" class="form-label">Photo <span style="color: red;">*</span></label>
+                <input type="file" id="photo" name="photo" accept="image/*" required class="form-control" style="padding: 6px;">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Add to Archive</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,291 @@
+/* Dashboard Stats */
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-6);
+    margin-bottom: var(--space-16);
+}
+
+.stat-card {
+    padding: var(--space-6);
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: var(--text-4xl);
+    font-weight: 300;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.stat-label {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Family Tree (Tesla-style) */
+.family-tree-section {
+    position: relative;
+    padding: var(--space-8) 0;
+}
+
+.tree-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-16);
+    position: relative;
+}
+
+.tree-tier-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    width: 100%;
+}
+
+.tree-tier-label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.tree-tier-nodes {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-8);
+    flex-wrap: wrap;
+    position: relative;
+}
+
+/* Tree Person Card */
+.person-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 160px;
+    padding: var(--space-4);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
+    text-decoration: none;
+    z-index: 2;
+    position: relative;
+}
+
+.person-node:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--border-medium);
+}
+
+.person-node.current-user {
+    border-color: var(--accent-color);
+}
+
+.node-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: var(--radius-full);
+    object-fit: cover;
+    margin-bottom: var(--space-3);
+    border: 2px solid var(--bg-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.node-name {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.node-role {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+}
+
+/* Profile Page */
+.profile-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: var(--space-16);
+    padding-bottom: var(--space-12);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.profile-portrait {
+    width: 160px;
+    height: 160px;
+    border-radius: var(--radius-full);
+    object-fit: cover;
+    margin-bottom: var(--space-6);
+    box-shadow: var(--shadow-md);
+}
+
+.profile-name {
+    font-size: var(--text-5xl);
+    font-weight: 300;
+    letter-spacing: -0.03em;
+    margin-bottom: var(--space-2);
+}
+
+.profile-years {
+    font-size: var(--text-lg);
+    color: var(--text-muted);
+}
+
+/* Timeline */
+.timeline {
+    position: relative;
+    padding-left: var(--space-8);
+    margin-top: var(--space-12);
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 11px;
+    width: 1px;
+    background-color: var(--border-medium);
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: var(--space-12);
+}
+
+.timeline-dot {
+    position: absolute;
+    left: -32px;
+    top: 6px;
+    width: 9px;
+    height: 9px;
+    border-radius: var(--radius-full);
+    background-color: var(--accent-color);
+    box-shadow: 0 0 0 4px var(--bg-secondary);
+}
+
+.timeline-year {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.timeline-content {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    transition: box-shadow var(--transition-base);
+}
+
+.timeline-content:hover {
+    box-shadow: var(--shadow-md);
+}
+
+/* Memory Stream */
+.memory-stream {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    margin-top: var(--space-8);
+}
+
+.memory-card {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-6);
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-light);
+}
+
+.memory-author {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.memory-author-img {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    object-fit: cover;
+}
+
+.memory-text {
+    font-size: var(--text-lg);
+    font-weight: 300;
+    line-height: 1.6;
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+    font-style: italic;
+}
+
+/* Auth Pages (Split Screen) */
+.auth-wrapper {
+    display: flex;
+    min-height: 100vh;
+    background: var(--bg-primary);
+}
+
+.auth-image-side {
+    flex: 1;
+    display: none;
+    background-color: var(--bg-accent);
+    background-image: url('../avatar.jpg'); /* We will use a generic placeholder or dynamic */
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.auth-image-side::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(to right, rgba(0,0,0,0.2), rgba(0,0,0,0.05));
+}
+
+.auth-form-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--space-12) var(--space-8);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.auth-header {
+    margin-bottom: var(--space-12);
+}
+
+.auth-title {
+    font-size: var(--text-3xl);
+    font-weight: 300;
+    margin-bottom: var(--space-2);
+}
+
+.auth-subtitle {
+    color: var(--text-secondary);
+    font-size: var(--text-lg);
+}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}FamilyArchive{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto; text-align: center; padding: var(--space-16) 0;">
+    <h1 style="font-size: var(--text-5xl); font-weight: 300; letter-spacing: -0.03em; margin-bottom: var(--space-6);">
+        Your family's story,<br>preserved for generations.
+    </h1>
+    
+    <p style="font-size: var(--text-xl); color: var(--text-secondary); line-height: 1.6; margin-bottom: var(--space-12); font-weight: 300;">
+        Build your family tree, connect across generations, and create a shared, interactive archive of memories in a beautiful, private space.
+    </p>
+
+    <div style="display: flex; gap: var(--space-4); justify-content: center; align-items: center; margin-bottom: var(--space-12);">
+        <a href="/register" class="btn btn-primary" style="padding: var(--space-4) var(--space-8); font-size: var(--text-lg);">Create Archive</a>
+        <a href="/login" class="btn btn-secondary" style="padding: var(--space-4) var(--space-8); font-size: var(--text-lg);">Sign In</a>
+    </div>
+
+    <div style="display: flex; flex-direction: column; align-items: center; gap: var(--space-2); color: var(--text-muted); font-size: var(--text-sm);">
+        <span>Have an invitation code?</span>
+        <a href="/join" class="btn btn-secondary" style="font-size: var(--text-sm); padding: var(--space-2) var(--space-4);">Join Family</a>
+    </div>
+</div>
+{% endblock %}

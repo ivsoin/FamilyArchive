@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в архив - FamilyArchive</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="auth-wrapper">
+        <div class="auth-image-side" style="background-image: url('{{ url_for('static', filename='avatar.jpg') }}');">
+            <!-- Optional overlay for text over image -->
+        </div>
+        <div class="auth-form-side">
+            <div class="auth-header">
+                <a href="/" class="header-logo" style="margin-bottom: var(--space-12); display: inline-flex;">
+                    <i data-lucide="layers" style="margin-right: var(--space-2); width: 24px; height: 24px;"></i>
+                    FamilyArchive
+                </a>
+                <h1 class="auth-title">Welcome back.</h1>
+                <p class="auth-subtitle">Your family's story, preserved.</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages" style="margin-bottom: var(--space-6);">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form action="/login" method="POST">
+                <div class="form-group">
+                    <label for="person_id" class="form-label">Email or ID</label>
+                    <input type="text" id="person_id" name="person_id" class="form-control" placeholder="example@mail.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="Enter your password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: var(--space-4); margin-top: var(--space-4);">Sign In</button>
+            </form>
+
+            <div style="margin-top: var(--space-8); text-align: center; color: var(--text-secondary); font-size: var(--text-sm);">
+                Don't have a password? <a href="/register" style="color: var(--text-primary); font-weight: 500; text-decoration: underline;">Set password</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

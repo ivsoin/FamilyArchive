@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - FamilyArchive{% endblock %}
+
+{% block content %}
+<div class="section" style="max-width: 600px; margin: 0 auto;">
+    <div style="margin-bottom: var(--space-8);">
+        <a href="/profile/{{ person_id }}" class="btn btn-secondary" style="display: inline-flex; align-items: center;">
+            <i data-lucide="arrow-left" style="margin-right: var(--space-2); width: 18px; height: 18px;"></i>
+            Cancel and Return
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Edit Profile</h3>
+        </div>
+
+        <form action="/edit/{{ person_id }}" method="POST" enctype="multipart/form-data" class="card-body">
+            
+            <div class="form-group">
+                <label for="person_id" class="form-label">Unique ID (Cannot be changed)</label>
+                <input type="text" id="person_id" name="person_id" class="form-control" value="{{ person_id }}" readonly
+                    style="background: var(--bg-secondary); color: var(--text-muted); cursor: not-allowed; border-style: dashed;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
+                <div class="form-group">
+                    <label for="last_name" class="form-label">Last Name <span style="color: red;">*</span></label>
+                    <input type="text" id="last_name" name="last_name" class="form-control" value="{{ person.last_name or '' }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="first_name" class="form-label">First Name <span style="color: red;">*</span></label>
+                    <input type="text" id="first_name" name="first_name" class="form-control" value="{{ person.first_name or '' }}" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
+                <div class="form-group">
+                    <label for="patronymic" class="form-label">Middle Name</label>
+                    <input type="text" id="patronymic" name="patronymic" class="form-control" value="{{ person.patronymic or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="maiden_name" class="form-label">Maiden Name</label>
+                    <input type="text" id="maiden_name" name="maiden_name" class="form-control" value="{{ person.maiden_name or '' }}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Gender <span style="color: red;">*</span></label>
+                <div style="display: flex; gap: var(--space-6); margin-top: var(--space-2);">
+                    <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer; color: var(--text-primary); font-size: var(--text-sm);">
+                        <input type="radio" name="gender" value="male" {% if person.gender == 'male' %}checked{% endif %}> Male
+                    </label>
+                    <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer; color: var(--text-primary); font-size: var(--text-sm);">
+                        <input type="radio" name="gender" value="female" {% if person.gender == 'female' %}checked{% endif %}> Female
+                    </label>
+                </div>
+            </div>
+
+            {% if g.user.id == person.id %}
+            <div class="form-group">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" id="email" name="email" class="form-control" value="{{ person.email or '' }}" placeholder="example@mail.com" required>
+            </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="role" class="form-label">Role in Family <span style="color: red;">*</span></label>
+                <input type="text" id="role" name="role" class="form-control" value="{{ person.role }}" required>
+            </div>
+
+            <div style="display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: flex-end; margin-bottom: var(--space-4);">
+                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                    <label for="birth_date" class="form-label">Date of Birth</label>
+                    <input type="date" id="birth_date" name="birth_date" class="form-control" value="{{ person.birth_date or '' }}">
+                </div>
+                <div class="form-group" id="death_date_container" style="flex: 1; margin-bottom: 0; display: {% if person.is_alive %}none{% else %}block{% endif %};">
+                    <label for="death_date" class="form-label">Date of Death</label>
+                    <input type="date" id="death_date" name="death_date" class="form-control" value="{{ person.death_date or '' }}">
+                </div>
+                <div class="form-group" style="flex: 1; margin-bottom: 0; padding-bottom: 10px;">
+                    <label style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); cursor: pointer; color: var(--text-primary);">
+                        <input type="checkbox" name="is_alive" id="is_alive" {% if person.is_alive %}checked{% endif %} onchange="document.getElementById('death_date_container').style.display = this.checked ? 'none' : 'block';"> Alive
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="bio" class="form-label">Short Biography <span style="color: red;">*</span></label>
+                <textarea id="bio" name="bio" class="form-control" required style="min-height: 100px;">{{ person.bio }}</textarea>
+            </div>
+
+            <!-- Existing Connections -->
+            {% if person.connections %}
+            <div class="form-group" style="margin-bottom: var(--space-6);">
+                <label class="form-label">Existing Connections (clear to remove)</label>
+                <div style="display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-2);">
+                    {% for conn_id, conn_role in person.connections.items() %}
+                    {% if conn_id in all_family %}
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); background: var(--bg-secondary); border: 1px solid var(--border-light); padding: var(--space-3); border-radius: var(--radius-md);">
+                        <span style="font-weight: 500; font-size: var(--text-sm); color: var(--text-primary); min-width: 150px; flex-shrink: 0;">{{ all_family[conn_id].name }}</span>
+                        <input type="text" name="edit_conn_{{ conn_id }}" value="{{ conn_role }}" class="form-control" placeholder="Connection will be removed if empty" style="margin: 0; padding: 6px 12px; font-size: var(--text-xs);">
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Add New Connection -->
+            <div class="form-group" style="margin-bottom: var(--space-6); padding: var(--space-4); border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                <label class="form-label" style="margin-bottom: var(--space-4);">Add New Connection</label>
+
+                <div id="new-connections-container">
+                    <div class="new-connection-row" style="display: flex; gap: var(--space-3); margin-bottom: var(--space-3);">
+                        <select name="new_connection_id[]" class="form-control" style="flex: 1; margin: 0;">
+                            <option value="">-- Select relative --</option>
+                            {% for id, relative in all_family.items() %}
+                            {% if id not in person.connections %}
+                            <option value="{{ id }}">{{ relative.name }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+
+                        <select name="new_connection_role[]" class="form-control" style="flex: 1; margin: 0;">
+                            <option value="parent">Parent</option>
+                            <option value="child">Child</option>
+                            <option value="spouse">Spouse</option>
+                            <option value="sibling">Sibling</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-secondary" onclick="addConnectionRow()" style="margin-top: var(--space-2); width: 100%; border-style: dashed;">
+                    <i data-lucide="plus" style="width: 16px; height: 16px; margin-right: var(--space-2);"></i> Add another connection
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label for="photo" class="form-label">New Photo (leave empty to keep current)</label>
+                <input type="file" id="photo" name="photo" accept="image/*" class="form-control" style="padding: 6px;">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Save Changes</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function addConnectionRow() {
+        const container = document.getElementById('new-connections-container');
+        const firstRow = container.querySelector('.new-connection-row');
+        if (firstRow) {
+            const newRow = firstRow.cloneNode(true);
+            const selects = newRow.querySelectorAll('select');
+            if (selects.length > 0) {
+                selects[0].value = '';
+            }
+            if (selects.length > 1) {
+                selects[1].value = 'parent';
+            }
+            container.appendChild(newRow);
+        }
+    }
+</script>
+{% endblock %}
